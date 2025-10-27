@@ -1,0 +1,20 @@
+# Compiled binaries
+mario
+mario.exe
+
+# Object files
+*.o
+*.obj
+
+# Executables
+*.exe
+*.out
+
+# Debug files
+*.dSYM/
+*.su
+
+# Temporary files
+*~
+*.swp
+*.swo
