@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <vector>
 #include <ctime>
+#include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
@@ -272,7 +274,14 @@ public:
         cout << "Нажмите любую клавишу для начала..." << endl;
         _getch();
         
-        system("cls");
+        // Очистка экрана вместо system("cls")
+        setCursorPosition(0, 0);
+        for (int i = 0; i < HEIGHT + 5; i++) {
+            for (int j = 0; j < WIDTH + 50; j++) {
+                cout << " ";
+            }
+            cout << endl;
+        }
         
         while (!gameOver) {
             handleInput();
@@ -281,13 +290,22 @@ public:
             Sleep(50);
         }
         
-        system("cls");
+        // Очистка экрана вместо system("cls")
+        setCursorPosition(0, 0);
+        for (int i = 0; i < HEIGHT + 5; i++) {
+            for (int j = 0; j < WIDTH + 50; j++) {
+                cout << " ";
+            }
+            cout << endl;
+        }
+        
+        setCursorPosition(0, 5);
         cout << "\n\n";
         cout << "    ╔═══════════════════════════════════╗\n";
         cout << "    ║         ИГРА ОКОНЧЕНА!            ║\n";
         cout << "    ╠═══════════════════════════════════╣\n";
         cout << "    ║                                   ║\n";
-        cout << "    ║    Ваш финальный счет: " << mario.score << "       ║\n";
+        cout << "    ║    Ваш финальный счет: " << setw(6) << mario.score << "    ║\n";
         cout << "    ║                                   ║\n";
         cout << "    ╚═══════════════════════════════════╝\n";
         cout << "\n\n";
