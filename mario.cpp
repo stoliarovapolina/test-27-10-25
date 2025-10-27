@@ -1,12 +1,66 @@
 #include <iostream>
-#include <conio.h>
-#include <windows.h>
 #include <vector>
 #include <ctime>
 #include <algorithm>
 #include <iomanip>
+#include <clocale>
+
+// Кросс-платформенная поддержка
+#ifdef _WIN32
+    #include <conio.h>
+    #include <windows.h>
+#else
+    #include <unistd.h>
+    #include <termios.h>
+    #include <sys/ioctl.h>
+    #include <sys/select.h>
+#endif
 
 using namespace std;
+
+// Кросс-платформенные функции для работы с консолью
+#ifndef _WIN32
+// Для Linux/Unix систем
+struct termios orig_termios;
+
+void disableRawMode() {
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+}
+
+void enableRawMode() {
+    tcgetattr(STDIN_FILENO, &orig_termios);
+    atexit(disableRawMode);
+    
+    struct termios raw = orig_termios;
+    raw.c_lflag &= ~(ECHO | ICANON);
+    raw.c_cc[VMIN] = 0;
+    raw.c_cc[VTIME] = 0;
+    
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+int _kbhit() {
+    struct timeval tv = { 0L, 0L };
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    return select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0;
+}
+
+int _getch() {
+    int r;
+    unsigned char c;
+    if ((r = read(STDIN_FILENO, &c, sizeof(c))) < 0) {
+        return r;
+    } else {
+        return c;
+    }
+}
+
+void Sleep(int milliseconds) {
+    usleep(milliseconds * 1000);
+}
+#endif
 
 const int WIDTH = 40;
 const int HEIGHT = 20;
@@ -107,18 +161,41 @@ private:
     bool gameOver;
     
     void setCursorPosition(int x, int y) {
+#ifdef _WIN32
         COORD coord;
         coord.X = x;
         coord.Y = y;
         SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+#else
+        printf("\033[%d;%dH", y + 1, x + 1);
+        fflush(stdout);
+#endif
     }
     
     void hideCursor() {
+#ifdef _WIN32
         HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
         CONSOLE_CURSOR_INFO info;
         info.dwSize = 100;
         info.bVisible = FALSE;
         SetConsoleCursorInfo(consoleHandle, &info);
+#else
+        printf("\033[?25l");
+        fflush(stdout);
+#endif
+    }
+    
+    void showCursor() {
+#ifdef _WIN32
+        HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        CONSOLE_CURSOR_INFO info;
+        info.dwSize = 100;
+        info.bVisible = TRUE;
+        SetConsoleCursorInfo(consoleHandle, &info);
+#else
+        printf("\033[?25h");
+        fflush(stdout);
+#endif
     }
     
 public:
@@ -266,6 +343,9 @@ public:
     }
     
     void run() {
+#ifndef _WIN32
+        enableRawMode();
+#endif
         hideCursor();
         
         cout << "=== МАРИО ===" << endl;
@@ -309,13 +389,23 @@ public:
         cout << "    ║                                   ║\n";
         cout << "    ╚═══════════════════════════════════╝\n";
         cout << "\n\n";
+        
+        showCursor();
+#ifndef _WIN32
+        disableRawMode();
+#endif
     }
 };
 
 int main() {
     // Установка кодировки для русского языка
+#ifdef _WIN32
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
+#else
+    // Для Linux/Unix используем UTF-8 по умолчанию
+    setlocale(LC_ALL, "");
+#endif
     
     Game game;
     game.run();
